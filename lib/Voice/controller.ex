@@ -1,5 +1,6 @@
 defmodule Alchemy.Voice.Controller do
   @moduledoc false
+  @bitrate "320k"
   use GenServer
   require Logger
   alias Alchemy.Voice.Supervisor.VoiceRegistry
@@ -86,9 +87,9 @@ defmodule Alchemy.Voice.Controller do
     %Proc{out: audio_stream} =
       Porcelain.spawn(Application.fetch_env!(:alchemy, :ffmpeg_path),
         ["-hide_banner", "-loglevel", "quiet", "-i","#{file_path}",
-         "-f", "data", "-map", "0:a", "-ar", "48k", "-ac", "2", 
+         "-f", "data", "-map", "0:a", "-ar", "48k", "-ac", "2",
          "-af", "volume=#{volume}",
-          "-acodec", "libopus", "-b:a", "128k", "pipe:1"], [out: :stream])
+          "-acodec", "libopus", "-b:a", @bitrate, "pipe:1"], [out: :stream])
     audio_stream
   end
 
@@ -101,15 +102,15 @@ defmodule Alchemy.Voice.Controller do
 
   defp io_data_stream(data, options) do
     volume = (options[:vol] || 100) / 100
-    opts = [in: data, out: :stream] 
+    opts = [in: data, out: :stream]
     %Proc{out: audio_stream} =
       Porcelain.spawn(Application.fetch_env!(:alchemy, :ffmpeg_path),
         ["-hide_banner", "-loglevel", "quiet", "-i","pipe:0",
          "-f", "data", "-map", "0:a", "-ar", "48k", "-ac", "2",
          "-af", "volume=#{volume}",
-         "-acodec", "libopus", "-b:a", "128k", "pipe:1"], opts)
+         "-acodec", "libopus", "-b:a", @bitrate, "pipe:1"], opts)
     audio_stream
-  end 
+  end
 
   defp run_player(path, type, options, parent, state) do
     send(state.ws, {:speaking, true})
